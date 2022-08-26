@@ -1,0 +1,12 @@
+{
+    "name": "frontend",
+    "version": "1.0.0",
+    "description": "",
+    "main": "index.js",
+    "scripts": {},
+    "author": "",
+    "license": "ISC",
+    "dependencies": {
+        "@types/node": "^18.7.13"
+    }
+}
