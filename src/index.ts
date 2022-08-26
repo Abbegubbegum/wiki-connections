@@ -6,10 +6,10 @@ const port = 5050;
 const frontEndPath = "./frontend/src/";
 const htmlPath = "./frontend/src/index.html";
 
-app.use(express.static(resolve(process.cwd(), frontEndPath)));
+app.use(express.static(resolve(__dirname, frontEndPath)));
 
 app.get("/", (req: Request, res: Response) => {
-    res.sendFile(htmlPath, { root: process.cwd() });
+    res.sendFile(htmlPath, { root: __dirname });
 });
 
 app.listen(port, () => {
