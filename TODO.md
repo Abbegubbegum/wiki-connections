@@ -1,0 +1,3 @@
+- Få in input från hemsidan till node backend
+- söka igenom hemsidorna och ta reda på kortaste vägen
+- Visa det på hemsidan

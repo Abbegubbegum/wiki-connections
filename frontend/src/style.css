@@ -1,0 +1,8 @@
+input {
+    margin: 1rem;
+}
+
+input:invalid {
+    border-color: red;
+    color: red;
+}
