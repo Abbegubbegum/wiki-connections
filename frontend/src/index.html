@@ -1,38 +1,26 @@
 <!DOCTYPE html>
 <html lang="en">
-    <head>
-        <meta charset="UTF-8" />
-        <meta http-equiv="X-UA-Compatible" content="IE=edge" />
-        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-        <script src="packages/jquery.js"></script>
-        <script defer src="index.js"></script>
-        <link rel="stylesheet" href="style.css" />
-        <title>App</title>
-    </head>
-    <body>
-        <h1>FIND THE CONNECTIONS</h1>
-        <form>
-            <div>
-                <label for="url1">URL1: </label>
-                <input
-                    type="url"
-                    id="url1"
-                    value="https://en.wikipedia.org/wiki/Gus_Fring"
-                    pattern="https://.*."
-                    required
-                />
-            </div>
-            <div>
-                <label for="url2">URL2: </label>
-                <input
-                    type="url"
-                    id="url2"
-                    value="https://en.wikipedia.org/wiki/Breaking_Bad"
-                    pattern="https://.*."
-                    required
-                />
-            </div>
-            <button type="submit">Submit</button>
-        </form>
-    </body>
+	<head>
+		<meta charset="UTF-8" />
+		<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+		<script src="packages/jquery.js"></script>
+		<script defer src="index.js"></script>
+		<link rel="stylesheet" href="style.css" />
+		<title>App</title>
+	</head>
+	<body>
+		<h1>FIND THE CONNECTIONS</h1>
+		<form>
+			<div>
+				<label for="url1">Start </label>
+				<input type="text" id="url1" value="Gus_Fring" required />
+			</div>
+			<div>
+				<label for="url2">End </label>
+				<input type="text" id="url2" value="Breaking_Bad" required />
+			</div>
+			<button type="submit">Submit</button>
+		</form>
+	</body>
 </html>
