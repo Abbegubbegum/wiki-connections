@@ -31,31 +31,83 @@ async function handleUrls(req: Request, res: Response) {
 		return res.sendStatus(400);
 
 	let startNode = new Node(startPath);
-	await createChildrenNodes(startNode);
-	console.dir(startNode);
+	endPath = encodeURIComponent(endPath);
+
+	let unexploredNodes: Node[] = [];
+	unexploredNodes.push(startNode);
 	let frontier: Node[] = [];
-	frontier.push(startNode);
-	let distance: {} = {};
-	distance[startNode.path] = 0;
-	
-	while (frontier.length > 0) {
-		let currentNode = frontier.shift();
-		currentNode.neighbors.forEach((next) => {
-			if (!distance[currentNode.path]) {
-				frontier.push(next);
-				distance[next.path] = 1 + distance[currentNode.path];
-				if (next.path === endPath) {
-					console.log("Found on path" + currentNode.path);
-					console.log("Distance: " + distance[next.path]);
-				}
-			}
+
+	let allPaths: string[] = [];
+	allPaths.push(startNode.path);
+
+	let searchedPaths: string[] = [];
+
+	let endNotFound = true;
+
+	while (endNotFound) {
+		let nodesToExplore = [...unexploredNodes];
+		unexploredNodes = [];
+
+		let currentCounter = 0;
+		let max = nodesToExplore.length;
+
+		console.log("Exploring " + nodesToExplore.length + " new nodes");
+
+		await Promise.all(
+			nodesToExplore.map(async (node) => {
+				unexploredNodes = (
+					await createChildrenNodes(node, allPaths, searchedPaths)
+				).concat(unexploredNodes);
+				console.clear();
+				currentCounter++;
+				console.log(`Loaded ${currentCounter} of ${max} nodes`);
+			})
+		).catch((errPath) => {
+			console.log("Failed to parse document on path: " + errPath);
+			res.status(500).send("Internal Server Error");
 		});
+
+		console.log(unexploredNodes.length + " new unexplored nodes found");
+		console.log("Searching through all nodes...");
+
+		frontier.push(startNode);
+		while (frontier.length > 0 && endNotFound) {
+			let currentNode = frontier.shift();
+			// console.log("Checking node " + currentNode.path);
+			currentNode.children.forEach((next) => {
+				frontier.push(next);
+				next.distance = 1 + currentNode.distance;
+				if (next.path === endPath) {
+					console.log("Found on path: " + currentNode.path);
+					console.log("Distance: " + next.distance);
+					res.status(200).json({
+						path: currentNode.path,
+						distance: next.distance,
+					});
+					endNotFound = false;
+					return;
+				}
+			});
+		}
+		if (endNotFound) console.log("End not found on current depth");
+		if (nodesToExplore.length > 1) {
+			fs.writeFileSync("tree.json", JSON.stringify(startNode));
+			while (true);
+		}
 	}
 }
 
-function createChildrenNodes(node: Node): Promise<void> {
-	return new Promise<void>(async (resolve, reject) => {
-		let result = await got(wikipediaURL + node.path);
+function createChildrenNodes(
+	parent: Node,
+	allPaths: string[],
+	searchedPaths: string[]
+): Promise<Node[]> {
+	return new Promise<Node[]>(async (resolve, reject) => {
+		if (searchedPaths.includes(parent.path)) return [];
+		// console.log("Creating children nodes of: " + parent.path);
+		searchedPaths.push(parent.path);
+
+		let result = await got(wikipediaURL + parent.path);
 		let parser = new domParser();
 		// fs.writeFile("wiki.html", result.body, (err) => {
 		// 	console.log(err);
@@ -63,24 +115,36 @@ function createChildrenNodes(node: Node): Promise<void> {
 
 		let doc = parser.parseFromString(result.body);
 
-		if (!doc) return undefined;
+		if (!doc) reject(parent.path);
 
 		let paths = doc
 			.getElementById("mw-content-text")
 			.getElementsByTagName("a")
-			.map((link) => link.getAttribute("href"))
+			.map((element) => element.getAttribute("href"))
 			.filter((link) => {
 				if (!link) return false;
 
-				return link.match(/\/wiki\/.+/);
+				return (
+					link.match(/\/wiki\/.+/) &&
+					!link.match(/File:/) &&
+					!link.match(/https:/)
+				);
 			})
-			.map((link) => link.replace("/wiki/", ""));
+			.map((link) => link.replace("/wiki/", ""))
+			.filter((path) => {
+				if (allPaths.includes(path)) return false;
+
+				allPaths.push(path);
+				return true;
+			});
+
+		// console.log(`Found ${paths.length} new nodes on path ${parent.path}`);
 
 		paths.forEach((path) => {
-			node.addNeighbor(new Node(path));
+			parent.addChild(new Node(path, parent.path));
 		});
 
-		resolve();
+		resolve(parent.children);
 	});
 }
 
@@ -101,19 +165,18 @@ function createChildrenNodes(node: Node): Promise<void> {
 
 class Node {
 	path: string;
-	neighbors: Node[];
-
-	constructor(path: string) {
-		this.path = path;
-		this.neighbors = [];
-	}
-
-	addNeighbor(node: Node) {
-		this.neighbors.push(node);
-	}
-}
-
-interface Distance {
-	node: Node;
+	parentPath: string;
+	children: Node[];
 	distance: number;
+
+	constructor(path: string, parentPath?: string) {
+		this.path = path;
+		this.parentPath = parentPath;
+		this.children = [];
+		this.distance = 0;
+	}
+
+	addChild(node: Node) {
+		if (!this.children.includes(node)) this.children.push(node);
+	}
 }
